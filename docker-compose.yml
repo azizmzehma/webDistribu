@@ -1,0 +1,43 @@
+services:
+  mysqldb:
+    image: mysql:5.7
+    restart: unless-stopped
+    ports:
+      - 3307:3306
+    volumes:
+      - db:/var/lib/mysql
+
+  eureka-server:
+    build:
+      context: ./eureka
+    restart: on-failure
+    ports:
+      - 8090:8090
+    environment:
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+
+  api-gateway:
+    build:
+      context: ./ApiGateway
+    depends_on:
+      - eureka-server
+    restart: on-failure
+    ports:
+      - 8099:8099
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8090/eureka
+
+  microclient:
+    build:
+      context: ./microclient
+    depends_on:
+      - eureka-server
+    restart: on-failure
+    ports:
+      - 8092:8092
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8090/eureka
+
+volumes:
+  db:
